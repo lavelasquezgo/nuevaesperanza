@@ -1,0 +1,51 @@
+# Cargar las funciones para realizar gráficos de balas de Víctor González Fernández (2019)
+# 
+# Funcion balasP2
+#
+balasP2 <-
+  function(cat1,cat2,catN,col=1,ylim=c(0,1)) {
+    catn = length(levels(factor(cat1)))
+    T = data.frame(cat1,cat2) 
+    Table = xtabs(~T[,1]+T[,2])
+    TableR = rowPercents(Table)
+    TR = data.frame(TableR)
+    TR$n = as.factor(rownames(TR))
+    TR$p = TR[,catN]/100
+    TR$ser = sqrt(TR$p*(1-TR$p))/sqrt(TR$Count)
+    TR$p80 = qt(0.90,  df=TR$Count-1)
+    TR$p95 = qt(0.975, df=TR$Count-1)
+    TR$p99 = qt(0.995, df=TR$Count-1)
+    #
+    plot(1:catn,TR$p,pch=3,xlab=deparse(substitute(cat1)),ylab="Proporcion",xaxt="n",xlim=c(0.5,catn+.5),
+         ylim=ylim,  cex=2.5, col=col, main=names(TR[(catN)]))
+    arrows(1:catn,TR$p-TR$ser*TR$p80,1:catn,TR$p+TR$ser*TR$p80,length=.0,angle=90,code=3,lend=1,lwd=12, col=col)
+    arrows(1:catn,TR$p-TR$ser*TR$p95,1:catn,TR$p+TR$ser*TR$p95,length=.0,angle=90,code=3,lend=1,lwd=6, col=col)
+    arrows(1:catn,TR$p-TR$ser*TR$p99,1:catn,TR$p+TR$ser*TR$p99,length=.0,angle=90,code=3,lend=1,lwd=3, col=col)
+    axis(side=1,at=1:catn,labels=(TR$n))
+    mtext("Conf.: \u2590\u2588\ 80%  \u2588 95%  \u2590 99%",line=-1,cex=.6,col=col)
+  }
+#
+# Función balasB
+#
+# Modificada para poner xlab y ylab
+#
+balasB <- function(cat,num,col=1,an=1, xlab, ylab) {
+  categorias = factor(cat)
+  catn <- length(levels(categorias))
+  T = data.frame(categorias,num)
+  TR = ddply(T, "categorias", summarise,
+             N    = length(num),
+             media = mean(num),
+             sd   = sd(num),
+             ser  = sd / sqrt(N))
+  TR$p80 = qt(0.90,  TR$N-1)
+  TR$p95 = qt(0.975, TR$N-1)
+  TR$p99 = qt(0.995, TR$N-1)
+  plot(1:catn,TR$media,pch=3,xlab=as.character(xlab),ylab=as.character(ylab),xaxt="n",xlim=c(0.5,catn+.5),
+       ylim=c(min(TR$media-1.1*TR$p99*TR$ser),max((TR$media+1.1*TR$p99*TR$ser))), cex=2.5*an, col=col)
+  arrows(1:catn,TR$media-TR$ser*TR$p80,1:catn,TR$media+TR$ser*TR$p80,length=.0,angle=90,code=3,lend=1,lwd=12*an, col=col)
+  arrows(1:catn,TR$media-TR$ser*TR$p95,1:catn,TR$media+TR$ser*TR$p95,length=.0,angle=90,code=3,lend=1,lwd=6*an, col=col)
+  arrows(1:catn,TR$media-TR$ser*TR$p99,1:catn,TR$media+TR$ser*TR$p99,length=.0,angle=90,code=3,lend=1,lwd=3*an, col=col)
+  axis(side=1,at=1:catn,labels=TR$categorias)
+}
+#

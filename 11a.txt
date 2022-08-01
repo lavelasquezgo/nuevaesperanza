@@ -1,0 +1,51 @@
+# Cargar las funciones para realizar gráficos de balas de Víctor González Fernández (2019)
+#
+# Función balasB
+#
+balasB <- function(cat,num,col=1,an=1, xlab, ylab) {
+  categorias = factor(cat)
+  catn <- length(levels(categorias))
+  T = data.frame(categorias,num)
+  TR = ddply(T, "categorias", summarise,
+             N    = length(num),
+             media = mean(num),
+             sd   = sd(num),
+             ser  = sd / sqrt(N))
+  TR$p80 = qt(0.90,  TR$N-1)
+  TR$p95 = qt(0.975, TR$N-1)
+  TR$p99 = qt(0.995, TR$N-1)
+  plot(1:catn,TR$media,pch=3,xlab=as.character(xlab),ylab=as.character(ylab),xaxt="n",xlim=c(0.5,catn+.5),
+       ylim=c(min(TR$media-1.1*TR$p99*TR$ser),max((TR$media+1.1*TR$p99*TR$ser))), cex=2.5*an, col=col)
+  arrows(1:catn,TR$media-TR$ser*TR$p80,1:catn,TR$media+TR$ser*TR$p80,length=.0,angle=90,code=3,lend=1,lwd=12*an, col=col)
+  arrows(1:catn,TR$media-TR$ser*TR$p95,1:catn,TR$media+TR$ser*TR$p95,length=.0,angle=90,code=3,lend=1,lwd=6*an, col=col)
+  arrows(1:catn,TR$media-TR$ser*TR$p99,1:catn,TR$media+TR$ser*TR$p99,length=.0,angle=90,code=3,lend=1,lwd=3*an, col=col)
+  axis(side=1,at=1:catn,labels=TR$categorias)
+}
+#
+# Función balapropRE 
+#
+# Modificada para añadir rangos de error
+#
+balapropRE <- function(cat1,cat2,catn) {
+  T = data.frame(cat1,cat2) 
+  Table = xtabs(~T[,1]+T[,2])
+  TableR = rowPercents(Table)
+  TR = data.frame(TableR)
+  TR$n = as.factor(rownames(TR))
+  TR$p = TR[,catn]/100
+  TR$ser = sqrt(TR$p*(1-TR$p))/sqrt(TR$Total)
+  TR$p80 = qt(0.90,  df=TR$Count-1)
+  TR$p95 = qt(0.975, df=TR$Count-1)
+  TR$p99 = qt(0.995, df=TR$Count-1)
+  print(cbind(porcentaje = TR$p*100, 
+              ochenta = TR$ser*TR$p80*100, 
+              noventaycinco = TR$ser*TR$p95*100, 
+              noventaynueve = TR$ser*TR$p99*100))
+  ggplot(TR, aes(x=n, y=p)) +
+    theme_classic()+
+    geom_errorbar(aes(ymin=p-ser*p80, ymax=p+ser*p80), width=0.0, size=6)+
+    geom_errorbar(aes(ymin=p-ser*p95, ymax=p+ser*p95), width=0.0, size=4)+
+    geom_errorbar(aes(ymin=p-ser*p99, ymax=p+ser*p99), width=0.0, size=2)+
+    geom_point(shape=3, size=12)+
+    ylab("Proporción")+ ggtitle(names(TR[(catn)])) + xlab(deparse(substitute(cat1)))
+}
